@@ -4,15 +4,13 @@ from db import AttendanceDB
 from env import env_config
 
 app = Flask(__name__)
-
 attendance_db = AttendanceDB()
+attendance_db.connect()
+attendance_db.load_db_from_participants_file()
 
 
 @app.route("/")
 def hello_world():
-    attendance_db.connect()
-    attendance_db.insert_or_update_students(
-        [{'name': 'Tomer', 'attendance_duration': 22.3, 'attendnace_percentage': 33.3}])
     return "<p>Hello World!</p>"
 
 
