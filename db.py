@@ -2,6 +2,7 @@ from decimal import Decimal
 from sqlalchemy import create_engine, Column, String, Integer, DECIMAL
 from sqlalchemy.orm import declarative_base, sessionmaker
 from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy_serializer import SerializerMixin
 from abc import ABC, abstractmethod
 import os
 
@@ -12,7 +13,7 @@ from env import env_config
 class DB(ABC):
     def __init__(self) -> None:
         self.base = declarative_base()
-        self.session = sessionmaker()
+        self.session = None
         self.engine = None
 
     @abstractmethod
@@ -24,7 +25,7 @@ class AttendanceDB(DB):
     def __init__(self) -> None:
         super().__init__()
 
-        class Student(self.base):
+        class Student(self.base, SerializerMixin):
             __tablename__ = 'students'
             id = Column(Integer(), primary_key=True)
             name = Column(String(25), nullable=False)
@@ -32,7 +33,7 @@ class AttendanceDB(DB):
             attendance_percentage = Column(DECIMAL(5, 2), nullable=False)
         self.model_student = Student
 
-        class Attendance(self.base):
+        class Attendance(self.base, SerializerMixin):
             __tablename__ = 'attendance'
             id = Column(Integer(), primary_key=True)
             total_duration = Column(DECIMAL(7, 2), nullable=False)
@@ -49,6 +50,7 @@ class AttendanceDB(DB):
             if not database_exists(engine.url):
                 create_database(engine.url)
             self.engine = engine
+            self.session = sessionmaker(self.engine)
             self.base.metadata.create_all(engine)
         except:
             print('Unable to connect to database! check env variables / sql server is up')
@@ -58,64 +60,69 @@ class AttendanceDB(DB):
 
     def insert_or_update_students(self, students: dict) -> bool:
         try:
-            local_session = self.session(bind=self.engine)
-            students_to_insert = []
-            for student in students.keys():
-                if self._student_in_table(student):
-                    self._update_student_durations(students[student], student)
-                else:
-                    students_to_insert.append(self.model_student(
-                        name=student, attendance_duration=Decimal(students[student]['attendance_duration']), attendance_percentage=Decimal(students[student]['attendance_percentage'])))
-            local_session.add_all(students_to_insert)
-            local_session.commit()
-            return True
+            with self.session() as local_session:
+                students_to_insert = []
+                for student in students.keys():
+                    if self._student_in_table(student):
+                        self._update_student_durations(
+                            students[student], student)
+                    else:
+                        students_to_insert.append(self.model_student(
+                            name=student, attendance_duration=Decimal(students[student]['attendance_duration']), attendance_percentage=Decimal(students[student]['attendance_percentage'])))
+                local_session.add_all(students_to_insert)
+                local_session.commit()
+                return True
         except Exception as ex:
+            local_session.close_all()
             print('Unable to insert into students table!')
+            print(ex)
             return False
 
     def _student_in_table(self, student_name) -> bool:
-        local_session = self.session(bind=self.engine)
-        student_entry = local_session.query(self.model_student).filter(
-            self.model_student.name == student_name).first()
-        if student_entry:
-            return True
-        return False
+        with self.session() as local_session:
+            student_entry = local_session.query(self.model_student).filter(
+                self.model_student.name == student_name).first()
+            if student_entry:
+                return True
+            return False
 
     def _update_student_durations(self, student_dict, student_name):
-        local_session = self.session(bind=self.engine)
-        student_entry = local_session.query(self.model_student).filter(
-            self.model_student.name == student_name).first()
-        student_entry.attendance_duration += Decimal(
-            student_dict['attendance_duration'])
-        student_entry.attendance_percentage = Decimal(
-            student_dict['attendance_percentage'])
+        with self.session() as local_session:
+            student_entry = local_session.query(self.model_student).filter(
+                self.model_student.name == student_name).first()
+            student_entry.attendance_duration += Decimal(
+                student_dict['attendance_duration'])
+            student_entry.attendance_percentage = Decimal(
+                student_dict['attendance_percentage'])
 
     def insert_or_update_attendance(self, meeting_minutes, loading_from_file_flag) -> bool:
         try:
-            local_session = self.session(bind=self.engine)
-            attendance = local_session.query(self.model_attendance).first()
-            if attendance and loading_from_file_flag:
-                attendance.total_duration = meeting_minutes
-                local_session.commit()
-                return True
-            elif attendance:
-                attendance.total_duration += meeting_minutes
-                local_session.commit()
-                return True
-            else:
-                new_entry = self.model_attendance(
-                    total_duration=meeting_minutes)
-                local_session.add(new_entry)
-                local_session.commit()
-                return True
+            with self.session() as local_session:
+                attendance = local_session.query(self.model_attendance).first()
+                if attendance and loading_from_file_flag:
+                    attendance.total_duration = meeting_minutes
+                    local_session.commit()
+                    return True
+                elif attendance:
+                    attendance.total_duration += meeting_minutes
+                    local_session.commit()
+                    return True
+                else:
+                    new_entry = self.model_attendance(
+                        total_duration=meeting_minutes)
+                    local_session.add(new_entry)
+                    local_session.commit()
+                    return True
         except Exception as ex:
+            local_session.close_all()
             print('Unable to insert into attendance table!')
+            print(ex)
             return False
 
     def get_total_meetings_duration(self) -> Decimal:
-        local_session = self.session(bind=self.engine)
-        attendance = local_session.query(self.model_attendance).first()
-        return attendance['total_duration']
+        with self.session() as local_session:
+            attendance = local_session.query(self.model_attendance).first()
+            return attendance['total_duration']
 
     def load_db_from_participants_file(self) -> bool:
         attendance_dict = get_attendance_dict_result(os.getcwd())
@@ -127,3 +134,16 @@ class AttendanceDB(DB):
             self.insert_or_update_students(attendance_dict)
             self.insert_or_update_attendance(Decimal(total_minutes), True)
             return True
+
+    def get_all_attendees(self) -> list[dict]:
+        with self.session() as local_session:
+            attendees = local_session.query(self.model_student).all()
+            result = []
+            for attendee in attendees:
+                result.append(attendee.to_dict())
+            return result
+
+    def get_attendance(self) -> dict:
+        with self.session() as local_session:
+            attendance = local_session.query(self.model_attendance).first()
+            return attendance.todict()

@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 
 from db import AttendanceDB
 from env import env_config
@@ -9,9 +9,16 @@ attendance_db.connect()
 attendance_db.load_db_from_participants_file()
 
 
-@app.route("/")
-def hello_world():
-    return "<p>Hello World!</p>"
+@app.route("/api/attendees")
+def attendess():
+    attendees = attendance_db.get_all_attendees()
+    return jsonify(attendees)
+
+
+@app.route("/api/attendance")
+def attendance():
+    attendance = attendance_db.get_attendance()
+    return jsonify(attendance.todict())
 
 
 if __name__ == '__main__':
