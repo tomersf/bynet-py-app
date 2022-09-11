@@ -15,6 +15,8 @@ class DB(ABC):
         self.base = declarative_base()
         self.session = None
         self.engine = None
+        self.students_changed = False
+        self.attendance_changed = False
 
     @abstractmethod
     def connect(self) -> None:
@@ -24,6 +26,8 @@ class DB(ABC):
 class AttendanceDB(DB):
     def __init__(self) -> None:
         super().__init__()
+        self.students = None
+        self.attendance = None
 
         class Student(self.base, SerializerMixin):
             __tablename__ = 'students'
@@ -73,10 +77,14 @@ class AttendanceDB(DB):
                 local_session.commit()
                 return True
         except Exception as ex:
-            local_session.close_all()
+            self.close_unexpected_db_session(local_session)
             print('Unable to insert into students table!')
             print(ex)
             return False
+
+    def close_unexpected_db_session(local_session):
+        local_session.rollback()
+        local_session.close_all()
 
     def _student_in_table(self, student_name) -> bool:
         with self.session() as local_session:
@@ -90,10 +98,11 @@ class AttendanceDB(DB):
         with self.session() as local_session:
             student_entry = local_session.query(self.model_student).filter(
                 self.model_student.name == student_name).first()
-            student_entry.attendance_duration += Decimal(
-                student_dict['attendance_duration'])
-            student_entry.attendance_percentage = Decimal(
-                student_dict['attendance_percentage'])
+            if student_entry:
+                student_entry.attendance_duration += Decimal(
+                    student_dict['attendance_duration'])
+                student_entry.attendance_percentage = Decimal(
+                    student_dict['attendance_percentage'])
 
     def insert_or_update_attendance(self, meeting_minutes, loading_from_file_flag) -> bool:
         try:
@@ -114,7 +123,7 @@ class AttendanceDB(DB):
                     local_session.commit()
                     return True
         except Exception as ex:
-            local_session.close_all()
+            self.close_unexpected_db_session(local_session)
             print('Unable to insert into attendance table!')
             print(ex)
             return False
@@ -125,6 +134,8 @@ class AttendanceDB(DB):
             return attendance['total_duration']
 
     def load_db_from_participants_file(self) -> bool:
+        self.students_changed = True
+        self.attendance_changed = True
         attendance_dict = get_attendance_dict_result(os.getcwd())
         total_minutes = attendance_dict['total_meetings_duration']
         attendance_dict.pop('total_meetings_duration')
@@ -136,14 +147,22 @@ class AttendanceDB(DB):
             return True
 
     def get_all_attendees(self) -> list[dict]:
+        if not self.students_changed:
+            return self.students
         with self.session() as local_session:
             attendees = local_session.query(self.model_student).all()
             result = []
             for attendee in attendees:
                 result.append(attendee.to_dict())
+            self.students_changed = False
+            self.students = result
             return result
 
     def get_attendance(self) -> dict:
+        if not self.attendance_changed:
+            return self.attendance
         with self.session() as local_session:
-            attendance = local_session.query(self.model_attendance).first()
-            return attendance.todict()
+            attendance = local_session.query(self.model_attendance).all()
+            self.attendance_changed = False
+            self.attendance = attendance[0].to_dict()
+            return attendance[0].to_dict()

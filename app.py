@@ -18,7 +18,7 @@ def attendess():
 @app.route("/api/attendance")
 def attendance():
     attendance = attendance_db.get_attendance()
-    return jsonify(attendance.todict())
+    return jsonify(attendance)
 
 
 if __name__ == '__main__':
