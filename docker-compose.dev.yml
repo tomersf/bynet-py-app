@@ -1,0 +1,43 @@
+version: '3'
+services:
+  mysql:
+    image: 'mysql:latest'
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=exercise
+      - MYSQL_USER=tomer
+      - MYSQL_PASSWORD=123456
+    # ports:
+    #   - '3306:3306'
+  nginx:
+    restart: always
+    build: 
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports:
+      - '3050:80'
+    # depends_on:
+    #   - api
+    #   - client
+  api:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./backend
+    environment:
+      - SQL_DBNAME=exercise
+      - SQL_HOST=tomer
+      - SQL_PASSWORD=123456
+      - WEB_HOST_DEV=localhost
+      - WEB_PORT_DEV=5002
+    # depends_on:
+    #   - mysql
+  client:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./frontend
+    volumes:
+      - /home/node/app/node_modules
+      - ./client:/home/node/app
+    environment:
+      - WDS_SOCKET_PORT=0
