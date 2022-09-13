@@ -50,8 +50,9 @@ class AttendanceDB(DB):
             password = env_config['SQL_PASSWORD']
             username = env_config['SQL_USER']
             dbname = env_config['SQL_DBNAME']
+            print(f'mysql://{username}:{password}@{hostname}:3306/{dbname}')
             engine = create_engine(
-                f"mysql://{username}:{password}@{hostname}/{dbname}", echo=True)
+                f"mysql://{username}:{password}@{hostname}:3306/{dbname}", echo=True)
             if not database_exists(engine.url):
                 create_database(engine.url)
             self.engine = engine
