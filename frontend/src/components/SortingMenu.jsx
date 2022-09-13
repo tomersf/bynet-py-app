@@ -21,7 +21,7 @@ export default function SortingMenu({attendees,setAttendeesList}) {
   const sortDescending = () => {
     attendees.sort((attendeeA,attendeeB) => {
       const result = sortAscAttendees(attendeeA,attendeeB)
-      if (result == 1) return -1
+      if (result === 1) return -1
       else return 1
     })
       const newArray = attendees.map(a => ({...a}));

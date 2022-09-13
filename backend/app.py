@@ -8,8 +8,8 @@ app = Flask(__name__)
 CORS(app, origins="*")
 
 attendance_db = AttendanceDB()
-attendance_db.connect()
-attendance_db.load_db_from_participants_file()
+if attendance_db.connect():
+    attendance_db.load_db_from_participants_file()
 
 
 @app.route("/attendees")

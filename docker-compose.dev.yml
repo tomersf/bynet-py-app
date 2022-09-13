@@ -8,8 +8,6 @@ services:
       - MYSQL_DATABASE=exercise
       - MYSQL_USER=tomer
       - MYSQL_PASSWORD=123456
-    # ports:
-    #   - '3306:3306'
   nginx:
     restart: always
     build: 
@@ -25,13 +23,12 @@ services:
       dockerfile: Dockerfile.dev
       context: ./backend
     environment:
-      - SQL_DBNAME=exercise
-      - SQL_HOST=tomer
-      - SQL_PASSWORD=123456
-      - WEB_HOST_DEV=localhost
-      - WEB_PORT_DEV=5002
-    # depends_on:
-    #   - mysql
+      - MYSQL_DB_DEV=exercise
+      - MYSQL_USER_DEV=tomer
+      - MYSQL_PASSWORD_DEV=123456
+      - MYSQL_HOST_DEV=mysql
+    depends_on:
+      - mysql
   client:
     build:
       dockerfile: Dockerfile.dev

@@ -28,6 +28,7 @@ class AttendanceDB(DB):
         super().__init__()
         self.students = None
         self.attendance = None
+        self.connected = False
 
         class Student(self.base, SerializerMixin):
             __tablename__ = 'students'
@@ -43,7 +44,7 @@ class AttendanceDB(DB):
             total_duration = Column(DECIMAL(7, 2), nullable=False)
         self.model_attendance = Attendance
 
-    def connect(self) -> None:
+    def connect(self) -> bool:
         try:
             hostname = env_config['SQL_HOST']
             password = env_config['SQL_PASSWORD']
@@ -56,11 +57,14 @@ class AttendanceDB(DB):
             self.engine = engine
             self.session = sessionmaker(self.engine)
             self.base.metadata.create_all(engine)
+            self.connected = True
+            return True
         except:
-            print('Unable to connect to database! check env variables / sql server is up')
             print(
-                f"Tried to connect to: mysql://{username}:<PASSWORD>@{hostname}/{dbname}")
-            return
+                'ERROR! Unable to connect to database! check env variables / sql server is up')
+            print(
+                f"Tried to connect to: mysql://{username}:<PASSWORD>@{hostname}:3306/{dbname}")
+            return False
 
     def insert_or_update_students(self, students: dict) -> bool:
         try:
@@ -147,6 +151,8 @@ class AttendanceDB(DB):
             return True
 
     def get_all_attendees(self) -> list[dict]:
+        if not self.connected:
+            return []
         if not self.students_changed:
             return self.students
         with self.session() as local_session:
@@ -159,6 +165,10 @@ class AttendanceDB(DB):
             return result
 
     def get_attendance(self) -> dict:
+        if not self.connected:
+            return {
+                'total_duration': 0
+            }
         if not self.attendance_changed:
             return self.attendance
         with self.session() as local_session:
