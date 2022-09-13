@@ -59,11 +59,12 @@ class AttendanceDB(DB):
             self.base.metadata.create_all(engine)
             self.connected = True
             return True
-        except:
+        except Exception as ex:
             print(
                 'ERROR! Unable to connect to database! check env variables / sql server is up')
             print(
-                f"Tried to connect to: mysql://{username}:<PASSWORD>@{hostname}:3306/{dbname}")
+                f"Tried to connect to: mysql://{username}:<PASSWORD>@{hostname}/{dbname}")
+            print(ex)
             return False
 
     def insert_or_update_students(self, students: dict) -> bool:

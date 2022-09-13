@@ -15,18 +15,15 @@ services:
       context: ./nginx
     ports:
       - '3050:80'
-    # depends_on:
-    #   - api
-    #   - client
   api:
     build:
       dockerfile: Dockerfile.dev
       context: ./backend
     environment:
-      - MYSQL_DB_DEV=exercise
-      - MYSQL_USER_DEV=tomer
-      - MYSQL_PASSWORD_DEV=123456
-      - MYSQL_HOST_DEV=mysql
+      - MYSQL_DB=exercise
+      - MYSQL_USER=tomer
+      - MYSQL_PASSWORD=123456
+      - MYSQL_HOST=mysql
     depends_on:
       - mysql
   client:
