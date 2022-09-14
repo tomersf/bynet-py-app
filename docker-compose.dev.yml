@@ -9,7 +9,7 @@ services:
       - MYSQL_USER=tomer
       - MYSQL_PASSWORD=123456
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-uroot", "-ppass"]
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-uroot", "-proot"]
       interval: 5s
       timeout: 5s
       retries: 5
