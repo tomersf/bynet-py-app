@@ -1,8 +1,12 @@
+from unittest import skip
+from Db import AttendanceDB
+from env import env_config
+from Logger import Logger
 from flask import Flask, jsonify
 from flask_cors import CORS
+from colorama import init
+init()
 
-from db import AttendanceDB
-from env import env_config
 
 app = Flask(__name__)
 CORS(app, origins="*")
@@ -22,11 +26,6 @@ def attendess():
 def attendance():
     attendance = attendance_db.get_attendance()
     return jsonify(attendance)
-
-
-@app.route('/test')
-def test():
-    return jsonify({'Test': 'test'})
 
 
 if __name__ == '__main__':
