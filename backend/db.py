@@ -50,7 +50,6 @@ class AttendanceDB(DB):
             password = env_config['SQL_PASSWORD']
             username = env_config['SQL_USER']
             dbname = env_config['SQL_DBNAME']
-            print(f'mysql://{username}:{password}@{hostname}:3306/{dbname}')
             engine = create_engine(
                 f"mysql://{username}:{password}@{hostname}:3306/{dbname}", echo=True)
             if not database_exists(engine.url):
@@ -175,6 +174,11 @@ class AttendanceDB(DB):
             return self.attendance
         with self.session() as local_session:
             attendance = local_session.query(self.model_attendance).all()
-            self.attendance_changed = False
-            self.attendance = attendance[0].to_dict()
-            return attendance[0].to_dict()
+            if attendance:
+                print('IN THE IF')
+                self.attendance_changed = False
+                self.attendance = attendance[0].to_dict()
+                return attendance[0].to_dict()
+            return {
+                'total_duration': 0
+            }
