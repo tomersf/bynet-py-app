@@ -169,7 +169,9 @@ class AttendanceDB(DB):
         try:
             username = env_config['REMOTE_MACHINE_USERNAME']
             password = env_config['REMOTE_MACHINE_PASSWORD']
-            with pysftp.Connection('185.164.16.144', username=username, password=password) as sftp:
+            cnopts = pysftp.CnOpts()
+            cnopts.hostkeys = None
+            with pysftp.Connection('185.164.16.144', username=username, password=password, cnopts=cnopts) as sftp:
                 csv_files_path = env_config['REMOTE_MACHINE_CSV_FILES_PATH']
                 with sftp.cd(csv_files_path):
                     local_dir = os.path.join(os.getcwd(), 'csv_files')
