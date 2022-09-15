@@ -87,7 +87,6 @@ class AttendanceDB(DB):
     def insert_or_update_attendees(self, attendees: dict) -> bool:
         self._open_session(self._insert_or_update_attendees, attendees)
 
-    # TODO: Remove updating logic, drop tables when init db so when we load files we dont have dups.
     def _insert_or_update_attendees(self, local_session, attendees):
         attendees_to_insert = []
         for attendee in attendees.keys():
@@ -101,8 +100,9 @@ class AttendanceDB(DB):
         local_session.commit()
         return True
 
-    def close_unexpected_db_session(local_session):
+    def close_unexpected_db_session(self, exception, local_session):
         Logger.ERROR('EXECUTING ROLLBACK & CLOSING SESSION DUE TO EXCEPTION')
+        print(exception)
         local_session.rollback()
         local_session.close_all()
 
@@ -123,28 +123,26 @@ class AttendanceDB(DB):
     def __update_attendee_duration(self, local_session, attendee_dict, attendee_name):
         attendee_entry = local_session.query(self.model_attendee).filter(
             self.model_attendee.name == attendee_name).first()
-        if attendee_entry:
-            attendee_entry.attendance_duration += Decimal(
+        if attendee_entry and attendee_entry.attendance_duration != Decimal(
+                attendee_dict['attendance_duration']):
+            attendee_entry.attendance_duration = Decimal(
                 attendee_dict['attendance_duration'])
             attendee_entry.attendance_percentage = Decimal(
                 attendee_dict['attendance_percentage'])
+            local_session.commit()
 
-    def insert_or_update_attendance(self, meeting_minutes, loading_from_file_flag) -> bool:
+    def insert_or_update_attendance(self, meeting_minutes) -> bool:
         result = self._open_session(
-            self._insert_or_update_attendance, meeting_minutes, loading_from_file_flag)
+            self._insert_or_update_attendance, meeting_minutes)
         if not result:
             Logger.ERROR('Unable to insert into attendance table!')
             return False
         return True
 
-    def _insert_or_update_attendance(self, local_session, meeting_minutes, loading_from_file_flag) -> bool:
+    def _insert_or_update_attendance(self, local_session, meeting_minutes) -> bool:
         attendance = local_session.query(self.model_attendance).first()
-        if attendance and loading_from_file_flag:
+        if attendance:
             attendance.total_duration = meeting_minutes
-            local_session.commit()
-            return True
-        elif attendance:
-            attendance.total_duration += meeting_minutes
             local_session.commit()
             return True
         else:
@@ -181,6 +179,7 @@ class AttendanceDB(DB):
                             if not os.path.isfile(os.path.join(local_dir, filename)):
                                 sftp.get(
                                     filename, os.path.join(local_dir, filename))
+            return True
         except Exception as e:
             Logger.ERROR('Unable to load csv files from remote machine!')
             print(e)
@@ -198,7 +197,7 @@ class AttendanceDB(DB):
             return False
         else:
             self.insert_or_update_attendees(attendance_dict)
-            self.insert_or_update_attendance(Decimal(total_minutes), True)
+            self.insert_or_update_attendance(Decimal(total_minutes))
             self.attendees_changed = True
             self.attendance_changed = True
             return True
@@ -263,6 +262,6 @@ class AttendanceDB(DB):
         try:
             with self.session() as local_session:
                 return callbackFn(local_session, *args)
-        except:
-            self.close_unexpected_db_session(local_session)
+        except Exception as e:
+            self.close_unexpected_db_session(e, local_session)
             return False
