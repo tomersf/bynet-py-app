@@ -29,8 +29,8 @@ services:
       - MYSQL_USER=tomer
       - MYSQL_PASSWORD=123456
       - MYSQL_HOST=mysql
-      - REMOTE_USERNAME=tomers
-      - REMOTE_PASSWORD=,unr8109714
+      - REMOTE_USERNAME
+      - REMOTE_PASSWORD
     depends_on:
       mysql:
         condition: service_healthy
