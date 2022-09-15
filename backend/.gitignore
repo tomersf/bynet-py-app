@@ -129,5 +129,4 @@ dmypy.json
 .pyre/
 
 # Misc
-participants.csv
-result.csv
+csv_files/

@@ -6,6 +6,7 @@ from sqlalchemy_serializer import SerializerMixin
 from abc import ABC, abstractmethod
 from Logger import Logger
 import os
+import pysftp
 
 from attendance import get_attendance_dict_result
 from env import env_config
@@ -86,6 +87,7 @@ class AttendanceDB(DB):
     def insert_or_update_attendees(self, attendees: dict) -> bool:
         self._open_session(self._insert_or_update_attendees, attendees)
 
+    # TODO: Remove updating logic, drop tables when init db so when we load files we dont have dups.
     def _insert_or_update_attendees(self, local_session, attendees):
         attendees_to_insert = []
         for attendee in attendees.keys():
@@ -105,7 +107,7 @@ class AttendanceDB(DB):
         local_session.close_all()
 
     def _attendee_in_table(self, attendee_name) -> bool:
-        self._open_session(self.__attendee_in_table, attendee_name)
+        return self._open_session(self.__attendee_in_table, attendee_name)
 
     def __attendee_in_table(self, local_session, attendee_name):
         attendee_entry = local_session.query(self.model_attendee).filter(
@@ -159,10 +161,37 @@ class AttendanceDB(DB):
         attendance = local_session.query(self.model_attendance).first()
         return attendance['total_duration']
 
-    def load_db_from_participants_file(self) -> bool:
-        self.attendees_changed = True
-        self.attendance_changed = True
-        attendance_dict = get_attendance_dict_result(os.getcwd())
+    def load_participants(self) -> bool:
+        flag1 = self._save_remote_csv_files_to_csv_files_local_dir()
+        flag2 = self._insert_csv_files_to_attendance_db()
+        return flag1 and flag2
+
+    def _save_remote_csv_files_to_csv_files_local_dir(self) -> bool:
+        try:
+            username = env_config['REMOTE_MACHINE_USERNAME']
+            password = env_config['REMOTE_MACHINE_PASSWORD']
+            with pysftp.Connection('185.164.16.144', username=username, password=password) as sftp:
+                csv_files_path = env_config['REMOTE_MACHINE_CSV_FILES_PATH']
+                with sftp.cd(csv_files_path):
+                    local_dir = os.path.join(os.getcwd(), 'csv_files')
+                    if not os.path.isdir(local_dir):
+                        os.mkdir(local_dir)
+                    for filename in sftp.listdir('.'):
+                        if filename.startswith('participant-') and filename.endswith('.csv'):
+                            if not os.path.isfile(os.path.join(local_dir, filename)):
+                                sftp.get(
+                                    filename, os.path.join(local_dir, filename))
+        except Exception as e:
+            Logger.ERROR('Unable to load csv files from remote machine!')
+            print(e)
+            return False
+
+    def _insert_csv_files_to_attendance_db(self) -> bool:
+        attendance_dict = get_attendance_dict_result(
+            os.path.join(os.getcwd(), 'csv_files'))
+        if not attendance_dict:
+            return False
+        self._fix_and_convert_names_to_eng(attendance_dict)
         total_minutes = attendance_dict['total_meetings_duration']
         attendance_dict.pop('total_meetings_duration')
         if not attendance_dict:
@@ -170,7 +199,29 @@ class AttendanceDB(DB):
         else:
             self.insert_or_update_attendees(attendance_dict)
             self.insert_or_update_attendance(Decimal(total_minutes), True)
+            self.attendees_changed = True
+            self.attendance_changed = True
             return True
+
+    def _fix_and_convert_names_to_eng(self, attendance_dict):
+        def drop_attendees_from_dict(attendees_names):
+            for attendee_name in attendees_names:
+                attendance_dict.pop(attendee_name)
+
+        def update_attendance_for_user(og_name, second_name):
+            attendance_dict[og_name]['attendance_duration'] += attendance_dict[second_name]['attendance_duration']
+            attendance_dict[og_name]['attendance_percentage'] += attendance_dict[second_name]['attendance_percentage']
+            drop_attendees_from_dict([second_name])
+        update_attendance_for_user('David', 'ציבולסקי דוד')
+        update_attendance_for_user('Yossi Bengaev', 'יוסי בנגייב')
+        update_attendance_for_user('Oren', 'אורן גדמו')
+        update_attendance_for_user('Batel Bokobza', 'Batel')
+        update_attendance_for_user('Yonatan', 'יונתן')
+        update_attendance_for_user('Naor', 'Naorf')
+        update_attendance_for_user('Sanad Adwan', 'Sanad')
+        update_attendance_for_user('Estherwahnon', 'Esther')
+        drop_attendees_from_dict(
+            ['Dan', 'Callin User', 'Malki', 'Avi Shilon', 'מירב חורש'])
 
     def get_all_attendees(self) -> list[dict]:
         if not self.connected:

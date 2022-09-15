@@ -16,7 +16,7 @@ def open_csv_files(i_dir):
     file_and_csvreader_tuple_list = []
     for dirpath, subdirs, files in os.walk(i_dir):
         for file in files:
-            if file.endswith('.csv') and file.startswith('participants') and not file.endswith('result.csv'):
+            if file.endswith('.csv') and file.startswith('participant-') and not file.endswith('result.csv'):
                 f = open(os.path.join('', dirpath, file),
                          'r', encoding='UTF-16')
                 csv_reader = csv.reader(f, delimiter='\t')
