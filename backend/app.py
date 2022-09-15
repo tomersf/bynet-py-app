@@ -13,11 +13,11 @@ CORS(app, origins="*")
 attendance_db = AttendanceDB()
 if attendance_db.connect():
     if attendance_db.load_participants():
-        Logger.SUCCESS('SUCCESS! Loaded participants to DB!')
+        Logger.SUCCESS('Loaded participants to DB!')
     else:
-        Logger.ERROR('ERROR! Unable to load participants to DB!')
+        Logger.ERROR('Unable to load participants to DB!')
 else:
-    Logger.ERROR('ERROR! Unable to connect to DB!')
+    Logger.ERROR('Unable to connect to DB!')
 
 
 @app.route("/attendees")

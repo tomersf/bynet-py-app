@@ -10,7 +10,7 @@ env_config = {
     'SQL_DBNAME': os.getenv('MYSQL_DB') or os.getenv('MYSQL_DB_DEV'),
     'WEB_PORT': os.getenv('WEB_PORT') or os.getenv('WEB_PORT_DEV'),
     'WEB_HOST': os.getenv('WEB_HOST') or os.getenv('WEB_HOST_DEV'),
-    'REMOTE_MACHINE_USERNAME': os.getenv('REMOTE_USERNAME'),
-    'REMOTE_MACHINE_PASSWORD': os.getenv('REMOTE_PASSWORD'),
+    'REMOTE_MACHINE_USERNAME': os.getenv('REMOTE_USERNAME') or os.getenv('REMOTE_USERNAME_DEV'),
+    'REMOTE_MACHINE_PASSWORD': os.getenv('REMOTE_PASSWORD') or os.getenv('REMOTE_PASSWORD_DEV'),
     'REMOTE_MACHINE_CSV_FILES_PATH': '/var/tmp/csv_files'
 }

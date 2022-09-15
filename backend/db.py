@@ -67,8 +67,8 @@ class AttendanceDB(DB):
             password = env_config['SQL_PASSWORD']
             username = env_config['SQL_USER']
             dbname = env_config['SQL_DBNAME']
-            engine = create_engine(
-                f"mysql://{username}:{password}@{hostname}:3306/{dbname}", echo=True)
+            DB_URI = f"mysql://{username}:{password}@{hostname}:3306/{dbname}"
+            engine = create_engine(DB_URI, echo=True)
             if not database_exists(engine.url):
                 create_database(engine.url)
             self.engine = engine
@@ -78,14 +78,14 @@ class AttendanceDB(DB):
             return True
         except Exception as ex:
             Logger.ERROR(
-                'ERROR! Unable to connect to database! check env variables / sql server is up')
+                'Unable to connect to database! check env variables / sql server is up')
             Logger.ERROR(
                 f"Tried to connect to: mysql://{username}:<PASSWORD>@{hostname}/{dbname}")
             print(ex)
             return False
 
     def insert_or_update_attendees(self, attendees: dict) -> bool:
-        self._open_session(self._insert_or_update_attendees, attendees)
+        return self._open_session(self._insert_or_update_attendees, attendees)
 
     def _insert_or_update_attendees(self, local_session, attendees):
         attendees_to_insert = []
@@ -162,6 +162,7 @@ class AttendanceDB(DB):
     def load_participants(self) -> bool:
         flag1 = self._save_remote_csv_files_to_csv_files_local_dir()
         flag2 = self._insert_csv_files_to_attendance_db()
+        print(f'FLAG 1 is {flag1} AND FLAG 2 is {flag2}')
         return flag1 and flag2
 
     def _save_remote_csv_files_to_csv_files_local_dir(self) -> bool:
@@ -189,15 +190,20 @@ class AttendanceDB(DB):
         attendance_dict = get_attendance_dict_result(
             os.path.join(os.getcwd(), 'csv_files'))
         if not attendance_dict:
-            return False
-        self._fix_and_convert_names_to_eng(attendance_dict)
-        total_minutes = attendance_dict['total_meetings_duration']
-        attendance_dict.pop('total_meetings_duration')
-        if not attendance_dict:
+            Logger.ERROR('Attendance dict is empty!')
             return False
         else:
-            self.insert_or_update_attendees(attendance_dict)
-            self.insert_or_update_attendance(Decimal(total_minutes))
+            self._fix_and_convert_names_to_eng(attendance_dict)
+            total_minutes = attendance_dict['total_meetings_duration']
+            attendance_dict.pop('total_meetings_duration')
+            is_success_in_insert_or_update_attendees = self.insert_or_update_attendees(
+                attendance_dict)
+            is_success_in_insert_or_update_attendance = self.insert_or_update_attendance(
+                Decimal(total_minutes))
+            if not is_success_in_insert_or_update_attendees:
+                Logger.ERROR('Unable to insert or update attendees!')
+            if not is_success_in_insert_or_update_attendance:
+                Logger.ERROR('Unable to insert or update attendance!')
             self.attendees_changed = True
             self.attendance_changed = True
             return True
@@ -220,7 +226,7 @@ class AttendanceDB(DB):
         update_attendance_for_user('Sanad Adwan', 'Sanad')
         update_attendance_for_user('Estherwahnon', 'Esther')
         drop_attendees_from_dict(
-            ['Dan', 'Callin User', 'Malki', 'Avi Shilon', 'מירב חורש'])
+            ['Dan', 'Callin User', 'Malki', 'Avi Shilon', 'מירב חורש', 'Avi Barell'])
 
     def get_all_attendees(self) -> list[dict]:
         if not self.connected:

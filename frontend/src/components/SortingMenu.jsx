@@ -10,7 +10,7 @@ export default function SortingMenu({attendees,setAttendeesList}) {
   const sortAscAttendees = (attendeeA,attendeeB) => {
     const res = parseInt(attendeeA.attendance_duration
       ) > parseInt(attendeeB.attendance_duration
-      ) ? -1 : 1
+      ) ? 1 : -1
     return res;
   }
   const sortAscending = () => {
