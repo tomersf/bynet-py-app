@@ -10,8 +10,6 @@ A simple attendance project created with flask, react & mysql.
 - [![Mysql][mysql.dev]][mysql-url]
 - [![Flask][flask.dev]][flask-url]
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 ### Prerequisites
 
 - Docker
