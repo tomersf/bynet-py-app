@@ -4,8 +4,6 @@
 
 A simple attendance project created with flask, react & mysql.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 ### Built With
 
 - [![React][react.js]][react-url]
@@ -41,8 +39,6 @@ MYSQL_PASSWORD=
    docker-compose -f docker-compose.dev.yml up
    ```
 3. Go to localhost:3050
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 [mysql.dev]: https://img.shields.io/badge/Mysql-DD0031?style=for-the-badge&logo=mysql&logoColor=white
 [mysql-url]: https://www.mysql.com/
