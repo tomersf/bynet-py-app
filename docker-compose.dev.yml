@@ -3,11 +3,7 @@ services:
   mysql:
     image: 'mysql:latest'
     restart: always
-    environment:
-      - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=exercise
-      - MYSQL_USER=tomer
-      - MYSQL_PASSWORD=123456
+    env_file: ./compose.env
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-uroot", "-proot"]
       interval: 5s
@@ -24,13 +20,7 @@ services:
     build:
       dockerfile: Dockerfile.dev
       context: ./backend
-    environment:
-      - MYSQL_DB=exercise
-      - MYSQL_USER=tomer
-      - MYSQL_PASSWORD=123456
-      - MYSQL_HOST=mysql
-      - REMOTE_USERNAME=<USERNAME>
-      - REMOTE_PASSWORD=<PASSWORD>
+    env_file: ./compose.env
     depends_on:
       mysql:
         condition: service_healthy

@@ -169,9 +169,10 @@ class AttendanceDB(DB):
         try:
             username = env_config['REMOTE_MACHINE_USERNAME']
             password = env_config['REMOTE_MACHINE_PASSWORD']
+            remote_machine_ip = env_config['REMOTE_MACHINE_IP']
             cnopts = pysftp.CnOpts()
             cnopts.hostkeys = None
-            with pysftp.Connection('185.164.16.144', username=username, password=password, cnopts=cnopts) as sftp:
+            with pysftp.Connection(remote_machine_ip, username=username, password=password, cnopts=cnopts) as sftp:
                 csv_files_path = env_config['REMOTE_MACHINE_CSV_FILES_PATH']
                 with sftp.cd(csv_files_path):
                     local_dir = os.path.join(os.getcwd(), 'csv_files')
@@ -216,9 +217,10 @@ class AttendanceDB(DB):
                 attendance_dict.pop(attendee_name)
 
         def update_attendance_for_user(og_name, second_name):
-            attendance_dict[og_name]['attendance_duration'] += attendance_dict[second_name]['attendance_duration']
-            attendance_dict[og_name]['attendance_percentage'] += attendance_dict[second_name]['attendance_percentage']
-            drop_attendees_from_dict([second_name])
+            if second_name in attendance_dict and og_name in attendance_dict:
+                attendance_dict[og_name]['attendance_duration'] += attendance_dict[second_name]['attendance_duration']
+                attendance_dict[og_name]['attendance_percentage'] += attendance_dict[second_name]['attendance_percentage']
+                drop_attendees_from_dict([second_name])
         update_attendance_for_user('David', 'ציבולסקי דוד')
         update_attendance_for_user('Yossi Bengaev', 'יוסי בנגייב')
         update_attendance_for_user('Oren', 'אורן גדמו')
