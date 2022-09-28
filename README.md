@@ -19,17 +19,15 @@ A simple attendance project created with flask, react & mysql.
 1. Make sure to set env vars in a compose.env file within the docker-compose.dev.yml file directory
 
 ```sh
-MYSQL_DB=
-MYSQL_USER=
-MYSQL_PASSWORD=
-MYSQL_HOST=
-REMOTE_USERNAME=
-REMOTE_PASSWORD=
+MYSQL_DB=exercise
+MYSQL_USER=tomer
+MYSQL_PASSWORD=123456
+MYSQL_HOST=mysql
+REMOTE_USERNAME=<remote username of the course machine>
+REMOTE_PASSWORD=<your password for the course machine>
 
-MYSQL_ROOT_PASSWORD=
-MYSQL_DATABASE=
-MYSQL_USER=
-MYSQL_PASSWORD=
+MYSQL_ROOT_PASSWORD=root
+MYSQL_DATABASE=exercise
 ```
 
 2. Run the following command (need docker installed)
