@@ -44,4 +44,5 @@ MYSQL_DATABASE=exercise
 [flask-url]: https://flask.palletsprojects.com/en/2.2.x/
 
 ### Screenshots
-![alt text](https://github.com/tomersf/bynet-py-app/blob/master/screenshots/indexScreen.png?raw=true)
+![Home Screen](https://github.com/tomersf/bynet-py-app/blob/master/screenshots/indexScreen.png?raw=true)
+![Loading Screen](https://github.com/tomersf/bynet-py-app/blob/master/screenshots/loadingScreen.png?raw=true)
