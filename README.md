@@ -34,7 +34,7 @@ MYSQL_DATABASE=exercise
    ```sh
    docker-compose -f docker-compose.dev.yml up
    ```
-3. Go to localhost:3050
+3. Go to localhost:3050 and check the project, also got sorting options by the attendance duration of the students.
 
 [mysql.dev]: https://img.shields.io/badge/Mysql-DD0031?style=for-the-badge&logo=mysql&logoColor=white
 [mysql-url]: https://www.mysql.com/
