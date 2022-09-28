@@ -42,3 +42,6 @@ MYSQL_DATABASE=exercise
 [react-url]: https://reactjs.org/
 [flask.dev]: https://img.shields.io/badge/Flask-563D7C?style=for-the-badge&logo=flask&logoColor=white
 [flask-url]: https://flask.palletsprojects.com/en/2.2.x/
+
+### Screenshots
+![alt text](https://github.com/tomersf/bynet-py-app/blob/master/screenshots/indexScreen.png?raw=true)
