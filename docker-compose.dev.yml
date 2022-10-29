@@ -1,35 +1,48 @@
-version: '3'
+version: '3.8'
 services:
   mysql:
     image: 'mysql:latest'
     restart: always
     env_file: ./compose.env
-    healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-uroot", "-proot"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+    networks:
+      - backend
   nginx:
+    depends_on:
+      - api
+      - client
     restart: always
     build: 
       dockerfile: Dockerfile.dev
       context: ./nginx
+    networks:
+      - frontend
+      - backend
     ports:
-      - '3050:80'
+      - '127.0.0.1:3050:80'
   api:
     build:
       dockerfile: Dockerfile.dev
       context: ./backend
+    networks:
+      - backend
     env_file: ./compose.env
+    command: sh -c '/app/wait-for.sh mysql:3306 -- flask run'
+    volumes:
+      - './wait-for.sh:/app/wait-for.sh'
     depends_on:
-      mysql:
-        condition: service_healthy
+      - mysql
   client:
     build:
       dockerfile: Dockerfile.dev
       context: ./frontend
+    networks:
+      - frontend
     volumes:
-      - /home/node/app/node_modules
-      - ./client:/home/node/app
+      - './frontend:/app'
+      - '/app/node_modules'
     environment:
       - WDS_SOCKET_PORT=0
+
+networks:
+  frontend:
+  backend:
