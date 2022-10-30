@@ -1,0 +1,41 @@
+- name: "AWS - Install docker"
+  hosts: vms
+  become: yes
+  tasks:
+    - name: Update all packages
+      yum:
+        name: "*"
+        state: latest
+        update_only: yes
+
+    # - name: Enable Some packages from amazon-linux-extras packages
+    #   shell: "amazon-linux-extras enable docker"
+
+    - name: clean yum metadata cache
+      command: yum clean metadata
+      args:
+        warn: false
+
+    - name: Install docker
+      yum:
+        name: docker
+        state: latest
+        update_cache: yes
+
+    - name: Enable Docker CE service at startup
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Install Docker compose
+      pip:
+        name: docker-compose
+        executable: /usr/bin/pip3
+
+    - name: adding existing user 'cloud_user' to group docker
+      user:
+        name: "cloud_user"
+        groups: docker
+        append: yes
+      become: yes
