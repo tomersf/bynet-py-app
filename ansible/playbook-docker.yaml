@@ -3,7 +3,7 @@
   become: yes
   tasks:
     - name: Update all packages
-      yum:
+      ansible.builtin.yum:
         name: "*"
         state: latest
         update_only: yes
@@ -12,29 +12,29 @@
     #   shell: "amazon-linux-extras enable docker"
 
     - name: clean yum metadata cache
-      command: yum clean metadata
+      ansible.builtin.command: yum clean metadata
       args:
         warn: false
 
     - name: Install docker
-      yum:
+      ansible.builtin.yum:
         name: docker
         state: latest
         update_cache: yes
 
     - name: Enable Docker CE service at startup
-      service:
+      ansible.builtin.service:
         name: docker
         state: started
         enabled: yes
 
     - name: Install Docker compose
-      pip:
+      ansible.builtin.pip:
         name: docker-compose
         executable: /usr/bin/pip3
 
     - name: adding existing user 'cloud_user' to group docker
-      user:
+      ansible.builtin.user:
         name: "cloud_user"
         groups: docker
         append: yes
