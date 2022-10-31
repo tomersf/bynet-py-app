@@ -1,6 +1,7 @@
-- name: "AWS - Install docker"
+- name: Docker & Docker-compose installation on amznlinux2
   hosts: vms
   become: yes
+  gather_facts: no
   tasks:
     - name: Update all packages
       ansible.builtin.yum:
