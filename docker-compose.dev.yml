@@ -29,8 +29,6 @@ services:
     command: sh -c '/app/wait-for.sh mysql:3306 -- flask run'
     volumes:
       - './wait-for.sh:/app/wait-for.sh'
-    ports:
-      - '5001:5000'
     depends_on:
       - mysql
   client:
